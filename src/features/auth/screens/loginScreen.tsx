@@ -98,7 +98,7 @@ export default function LoginScreen({ navigation }: any) {
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles.appName}>Turfora</Text>
+        
           <Text style={styles.tagline}>Book your perfect turf</Text>
         </View>
 
@@ -219,11 +219,11 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: "center",
-    marginBottom: 32
+    marginBottom: 25
   },
   logo: {
-    width: 80,
-    height: 80,
+    width: 150,
+    height: 150,
     borderRadius: 20
   },
   appName: {
