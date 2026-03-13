@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Alert,
   Image,
   ScrollView,
   KeyboardAvoidingView,
@@ -14,57 +13,54 @@ import {
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { useDispatch } from "react-redux"
-import { loginUser } from "../../../api/auth.api"
+import { registerUser } from "../../../api/auth.api"
 import { setUser } from "../../../redux/slices/authSlice"
-import { saveData, getData } from "../../../lib/storage"
 import RoleSelector, { Role } from "../../../components/RoleSelector"
 
-const REMEMBER_ME_KEY = "turfora_remember_me"
-
-export default function LoginScreen({ navigation }: any) {
+export default function SignupScreen({ navigation }: any) {
   const dispatch = useDispatch()
+  const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [role, setRole] = useState<Role>("USER")
-  const [rememberMe, setRememberMe] = useState(false)
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
-  useEffect(() => {
-    const loadSavedEmail = async () => {
-      const saved = await getData(REMEMBER_ME_KEY)
-      if (saved?.email) {
-        setEmail(saved.email)
-        setRememberMe(true)
-      }
+  const validate = (): string | null => {
+    if (!fullName.trim()) return "Please enter your full name"
+    if (!email.trim()) return "Please enter your email address"
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      return "Please enter a valid email address"
     }
-    loadSavedEmail()
-  }, [])
+    if (password.length < 8) return "Password must be at least 8 characters"
+    if (password !== confirmPassword) return "Passwords do not match"
+    if (!acceptedTerms) return "Please accept the terms & conditions"
+    return null
+  }
 
-  const handleLogin = async () => {
+  const handleSignup = async () => {
     setError("")
 
-    if (!email.trim()) {
-      setError("Please enter your email")
-      return
-    }
-    if (!password) {
-      setError("Please enter your password")
+    const validationError = validate()
+    if (validationError) {
+      setError(validationError)
       return
     }
 
     try {
       setLoading(true)
-      const res = await loginUser({ email: email.trim(), password, role })
+      const res = await registerUser({
+        fullName: fullName.trim(),
+        email: email.trim(),
+        password,
+        role
+      })
       const userData: { email: string; role: Role } = res.data?.user ?? { email: email.trim(), role }
       dispatch(setUser(userData))
-
-      if (rememberMe) {
-        await saveData(REMEMBER_ME_KEY, { email: email.trim() })
-      } else {
-        await saveData(REMEMBER_ME_KEY, null)
-      }
 
       const userRole = userData.role
       if (userRole === "ADMIN") {
@@ -75,7 +71,7 @@ export default function LoginScreen({ navigation }: any) {
         navigation.replace("UserHome")
       }
     } catch {
-      setError("Invalid credentials. Please try again.")
+      setError("Registration failed. Please try again.")
     } finally {
       setLoading(false)
     }
@@ -104,11 +100,25 @@ export default function LoginScreen({ navigation }: any) {
 
         {/* Card */}
         <View style={styles.card}>
-          <Text style={styles.title}>Welcome Back 👋</Text>
-          <Text style={styles.subtitle}>Sign in to your account</Text>
+          <Text style={styles.title}>Create Account 🚀</Text>
+          <Text style={styles.subtitle}>Join Turfora today</Text>
 
           {/* Role Selector */}
-          <RoleSelector selectedRole={role} onSelectRole={setRole} />
+          <RoleSelector selectedRole={role} onSelectRole={setRole} allowedRoles={["USER", "OWNER"]} />
+
+          {/* Full Name */}
+          <View style={styles.inputWrapper}>
+            <Ionicons name="person-outline" size={18} color="#888" style={styles.inputIcon} />
+            <TextInput
+              placeholder="Full name"
+              style={styles.input}
+              autoCapitalize="words"
+              value={fullName}
+              onChangeText={setFullName}
+              placeholderTextColor="#aaa"
+              returnKeyType="next"
+            />
+          </View>
 
           {/* Email */}
           <View style={styles.inputWrapper}>
@@ -135,8 +145,7 @@ export default function LoginScreen({ navigation }: any) {
               value={password}
               onChangeText={setPassword}
               placeholderTextColor="#aaa"
-              returnKeyType="done"
-              onSubmitEditing={handleLogin}
+              returnKeyType="next"
             />
             <TouchableOpacity
               onPress={() => setShowPassword(!showPassword)}
@@ -150,24 +159,48 @@ export default function LoginScreen({ navigation }: any) {
             </TouchableOpacity>
           </View>
 
-          {/* Remember me + Forgot password */}
-          <View style={styles.row}>
+          {/* Confirm Password */}
+          <View style={styles.inputWrapper}>
+            <Ionicons name="lock-closed-outline" size={18} color="#888" style={styles.inputIcon} />
+            <TextInput
+              placeholder="Confirm password"
+              style={[styles.input, styles.passwordInput]}
+              secureTextEntry={!showConfirmPassword}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              placeholderTextColor="#aaa"
+              returnKeyType="done"
+              onSubmitEditing={handleSignup}
+            />
             <TouchableOpacity
-              style={styles.checkboxRow}
-              onPress={() => setRememberMe(!rememberMe)}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: rememberMe }}
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+              accessibilityLabel={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
             >
-              <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
-                {rememberMe && <Ionicons name="checkmark" size={12} color="#fff" />}
-              </View>
-              <Text style={styles.checkboxLabel}>Remember me</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={() => Alert.alert("Reset Password", "Password reset instructions will be sent to your email address.")}>
-              <Text style={styles.forgotText}>Forgot password?</Text>
+              <Ionicons
+                name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
+                size={20}
+                color="#888"
+              />
             </TouchableOpacity>
           </View>
+
+          {/* Terms & Conditions */}
+          <TouchableOpacity
+            style={styles.checkboxRow}
+            onPress={() => setAcceptedTerms(!acceptedTerms)}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: acceptedTerms }}
+          >
+            <View style={[styles.checkbox, acceptedTerms && styles.checkboxChecked]}>
+              {acceptedTerms && <Ionicons name="checkmark" size={12} color="#fff" />}
+            </View>
+            <Text style={styles.checkboxLabel}>
+              I agree to the{" "}
+              <Text style={styles.termsLink}>Terms & Conditions</Text>
+              {" "}and{" "}
+              <Text style={styles.termsLink}>Privacy Policy</Text>
+            </Text>
+          </TouchableOpacity>
 
           {/* Error */}
           {error ? (
@@ -177,28 +210,28 @@ export default function LoginScreen({ navigation }: any) {
             </View>
           ) : null}
 
-          {/* Login Button */}
+          {/* Signup Button */}
           <TouchableOpacity
             style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleLogin}
+            onPress={handleSignup}
             disabled={loading}
             accessibilityRole="button"
-            accessibilityLabel="Login"
+            accessibilityLabel="Create account"
           >
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.buttonText}>Login</Text>
+              <Text style={styles.buttonText}>Create Account</Text>
             )}
           </TouchableOpacity>
 
-          {/* Signup Link */}
+          {/* Login Link */}
           <TouchableOpacity
             style={styles.footerRow}
-            onPress={() => navigation.navigate("Signup")}
+            onPress={() => navigation.navigate("Login")}
           >
-            <Text style={styles.footerText}>Don&apos;t have an account? </Text>
-            <Text style={styles.link}>Sign Up</Text>
+            <Text style={styles.footerText}>Already have an account? </Text>
+            <Text style={styles.link}>Login</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -281,16 +314,11 @@ const styles = StyleSheet.create({
   passwordInput: {
     paddingRight: 8
   },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20
-  },
   checkboxRow: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 8
+    alignItems: "flex-start",
+    gap: 8,
+    marginBottom: 20
   },
   checkbox: {
     width: 18,
@@ -299,7 +327,9 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: "#2E86DE",
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
+    marginTop: 1,
+    flexShrink: 0
   },
   checkboxChecked: {
     backgroundColor: "#2E86DE",
@@ -307,10 +337,11 @@ const styles = StyleSheet.create({
   },
   checkboxLabel: {
     fontSize: 13,
-    color: "#555"
+    color: "#555",
+    flex: 1,
+    lineHeight: 20
   },
-  forgotText: {
-    fontSize: 13,
+  termsLink: {
     color: "#2E86DE",
     fontWeight: "600"
   },
