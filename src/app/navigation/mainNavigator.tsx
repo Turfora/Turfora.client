@@ -1,213 +1,141 @@
-import React, { useState, useEffect } from 'react'
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-  RefreshControl,
-} from 'react-native'
-import { getUserBookings } from '../../api/bookings'
-import { Booking } from '../../types/booking.types'
+import React, { useEffect } from 'react'
+import { View, ActivityIndicator } from 'react-native'
+import { NavigationContainer } from '@react-navigation/native'
+import { createNativeStackNavigator } from '@react-navigation/native-stack'
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
+import { useSelector, useDispatch } from 'react-redux'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { Ionicons } from '@expo/vector-icons'
 
-export default function BookingsScreen() {
-  const [bookings, setBookings] = useState<Booking[]>([])
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
+import LoginScreen from '../../features/auth/screens/loginScreen'
+import SignupScreen from '../../features/auth/screens/signupScreen'
+import HomeScreen from '../../features/user/screens/homeScreen'
+import SlotScreen from '../../features/user/screens/slotScreen'
+import BookingsScreen from '../../features/user/screens/BookingsScreen'
+import ProfileScreen from '../../features/user/screens/profileScreen'
+import AllTurfsScreen from '../../features/user/screens/AllTurfsScreen'
+import AdminDashboard from '../../features/admin/screens/adminDashboard'
+import OwnerDashboard from '../../features/owner/screens/ownerDashboard'
 
-  useEffect(() => {
-    fetchBookings()
-  }, [])
+import { RootState } from '../../redux/store'
+import { setCredentials, setLoading } from '../../redux/slices/authSlice'
 
-  const fetchBookings = async () => {
-    try {
-      const res = await getUserBookings()
-      setBookings(res.data.data || [])
-    } catch (error) {
-      console.error('Error fetching bookings:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+const AuthStack = createNativeStackNavigator()
+const UserTab = createBottomTabNavigator()
+const UserStack = createNativeStackNavigator()
+const AdminStack = createNativeStackNavigator()
+const OwnerStack = createNativeStackNavigator()
 
-  const onRefresh = async () => {
-    setRefreshing(true)
-    await fetchBookings()
-    setRefreshing(false)
-  }
-
-  if (loading) {
-    return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#4CAF50" />
-      </View>
-    )
-  }
-
-  if (bookings.length === 0) {
-    return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyIcon}>📅</Text>
-        <Text style={styles.emptyText}>No bookings yet</Text>
-        <Text style={styles.emptySubtext}>Start booking your favorite turfs!</Text>
-      </View>
-    )
-  }
-
+function AuthNavigator() {
   return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-    >
-      <FlatList
-        data={bookings}
-        keyExtractor={(item) => item.id}
-        scrollEnabled={false}
-        renderItem={({ item }) => (
-          <View style={styles.bookingCard}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.bookingId}>Booking #{item.id.slice(0, 8)}</Text>
-              <View
-                style={[
-                  styles.statusBadge,
-                  {
-                    backgroundColor:
-                      item.status === 'confirmed' ? '#4CAF50' : '#FFC107',
-                  },
-                ]}
-              >
-                <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
-              </View>
-            </View>
-
-            <View style={styles.cardBody}>
-              <View style={styles.detailRow}>
-                <Text style={styles.label}>Date</Text>
-                <Text style={styles.value}>{item.booking_date}</Text>
-              </View>
-
-              <View style={styles.detailRow}>
-                <Text style={styles.label}>Time</Text>
-                <Text style={styles.value}>
-                  {item.start_time} - {item.end_time}
-                </Text>
-              </View>
-
-              <View style={styles.detailRow}>
-                <Text style={styles.label}>Total Price</Text>
-                <Text style={styles.price}>${item.total_price}</Text>
-              </View>
-            </View>
-
-            <TouchableOpacity style={styles.viewButton}>
-              <Text style={styles.viewButtonText}>View Details</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      />
-    </ScrollView>
+    <AuthStack.Navigator screenOptions={{ headerShown: false }}>
+      <AuthStack.Screen name="Login" component={LoginScreen} />
+      <AuthStack.Screen name="Signup" component={SignupScreen} />
+    </AuthStack.Navigator>
   )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-    padding: 16,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-    minHeight: 400,
-  },
-  emptyIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#999',
-  },
-  bookingCard: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  bookingId: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 4,
-  },
-  statusText: {
-    color: 'white',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  cardBody: {
-    marginBottom: 16,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  label: {
-    fontSize: 12,
-    color: '#999',
-    fontWeight: '600',
-  },
-  value: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#333',
-  },
-  price: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#4CAF50',
-  },
-  viewButton: {
-    backgroundColor: '#000',
-    paddingVertical: 10,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  viewButtonText: {
-    color: 'white',
-    fontWeight: '600',
-    fontSize: 13,
-  },
-})
+function UserTabNavigator() {
+  return (
+    <UserTab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarActiveTintColor: '#2E86DE',
+        tabBarInactiveTintColor: '#999',
+        tabBarIcon: ({ focused, color, size }: { focused: boolean; color: string; size: number }) => {
+          let iconName: React.ComponentProps<typeof Ionicons>['name'] = 'home-outline'
+          if (route.name === 'Home') {
+            iconName = focused ? 'home' : 'home-outline'
+          } else if (route.name === 'Bookings') {
+            iconName = focused ? 'calendar' : 'calendar-outline'
+          } else if (route.name === 'Profile') {
+            iconName = focused ? 'person' : 'person-outline'
+          }
+          return <Ionicons name={iconName} size={size} color={color} />
+        },
+      })}
+    >
+      <UserTab.Screen name="Home" component={HomeScreen} />
+      <UserTab.Screen name="Bookings" component={BookingsScreen} />
+      <UserTab.Screen name="Profile" component={ProfileScreen} />
+    </UserTab.Navigator>
+  )
+}
+
+function UserNavigator() {
+  return (
+    <UserStack.Navigator screenOptions={{ headerShown: false }}>
+      <UserStack.Screen name="UserHome" component={UserTabNavigator} />
+      <UserStack.Screen
+        name="TurfDetail"
+        component={SlotScreen}
+        options={{ headerShown: true, title: 'Book a Slot' }}
+      />
+      <UserStack.Screen
+        name="AllTurfs"
+        component={AllTurfsScreen}
+        options={{ headerShown: true, title: 'All Turfs' }}
+      />
+    </UserStack.Navigator>
+  )
+}
+
+function AdminNavigator() {
+  return (
+    <AdminStack.Navigator screenOptions={{ headerShown: false }}>
+      <AdminStack.Screen name="AdminDashboard" component={AdminDashboard} />
+    </AdminStack.Navigator>
+  )
+}
+
+function OwnerNavigator() {
+  return (
+    <OwnerStack.Navigator screenOptions={{ headerShown: false }}>
+      <OwnerStack.Screen name="OwnerDashboard" component={OwnerDashboard} />
+    </OwnerStack.Navigator>
+  )
+}
+
+export default function MainNavigator() {
+  const dispatch = useDispatch()
+  const { user, isLoading } = useSelector((state: RootState) => state.auth)
+
+  useEffect(() => {
+    const loadAuthState = async () => {
+      try {
+        const token = await AsyncStorage.getItem('authToken')
+        const userStr = await AsyncStorage.getItem('authUser')
+        if (token && userStr) {
+          const savedUser = JSON.parse(userStr)
+          dispatch(setCredentials({ user: savedUser, token }))
+        }
+      } catch (error) {
+        console.error('[MainNavigator] Error loading auth state:', error)
+      } finally {
+        dispatch(setLoading(false))
+      }
+    }
+    loadAuthState()
+  }, [dispatch])
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#2E86DE" />
+      </View>
+    )
+  }
+
+  const renderNavigator = () => {
+    if (!user) return <AuthNavigator />
+    if (user.role === 'ADMIN') return <AdminNavigator />
+    if (user.role === 'OWNER') return <OwnerNavigator />
+    return <UserNavigator />
+  }
+
+  return (
+    <NavigationContainer>
+      {renderNavigator()}
+    </NavigationContainer>
+  )
+}

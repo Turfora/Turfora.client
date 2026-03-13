@@ -13,9 +13,10 @@ import {
   Platform
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
+import AsyncStorage from "@react-native-async-storage/async-storage"
 import { useDispatch } from "react-redux"
 import { loginUser } from "../../../api/auth.api"
-import { setUser } from "../../../redux/slices/authSlice"
+import { setCredentials } from "../../../redux/slices/authSlice"
 import { saveData, getData } from "../../../lib/storage"
 import RoleSelector, { Role } from "../../../components/RoleSelector"
 
@@ -57,22 +58,17 @@ export default function LoginScreen({ navigation }: any) {
     try {
       setLoading(true)
       const res = await loginUser({ email: email.trim(), password, role })
+      const token: string = res.data?.token ?? ""
       const userData: { email: string; role: Role } = res.data?.user ?? { email: email.trim(), role }
-      dispatch(setUser(userData))
+
+      await AsyncStorage.setItem("authToken", token)
+      await AsyncStorage.setItem("authUser", JSON.stringify(userData))
+      dispatch(setCredentials({ user: userData, token }))
 
       if (rememberMe) {
         await saveData(REMEMBER_ME_KEY, { email: email.trim() })
       } else {
         await saveData(REMEMBER_ME_KEY, null)
-      }
-
-      const userRole = userData.role
-      if (userRole === "ADMIN") {
-        navigation.replace("AdminDashboard")
-      } else if (userRole === "OWNER") {
-        navigation.replace("OwnerDashboard")
-      } else {
-        navigation.replace("UserHome")
       }
     } catch {
       setError("Invalid credentials. Please try again.")

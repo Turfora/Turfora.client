@@ -12,9 +12,10 @@ import {
   Platform
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
+import AsyncStorage from "@react-native-async-storage/async-storage"
 import { useDispatch } from "react-redux"
 import { registerUser } from "../../../api/auth.api"
-import { setUser } from "../../../redux/slices/authSlice"
+import { setCredentials } from "../../../redux/slices/authSlice"
 import RoleSelector, { Role } from "../../../components/RoleSelector"
 
 export default function SignupScreen({ navigation }: any) {
@@ -59,17 +60,12 @@ export default function SignupScreen({ navigation }: any) {
         password,
         role
       })
+      const token: string = res.data?.token ?? ""
       const userData: { email: string; role: Role } = res.data?.user ?? { email: email.trim(), role }
-      dispatch(setUser(userData))
 
-      const userRole = userData.role
-      if (userRole === "ADMIN") {
-        navigation.replace("AdminDashboard")
-      } else if (userRole === "OWNER") {
-        navigation.replace("OwnerDashboard")
-      } else {
-        navigation.replace("UserHome")
-      }
+      await AsyncStorage.setItem("authToken", token)
+      await AsyncStorage.setItem("authUser", JSON.stringify(userData))
+      dispatch(setCredentials({ user: userData, token }))
     } catch {
       setError("Registration failed. Please try again.")
     } finally {

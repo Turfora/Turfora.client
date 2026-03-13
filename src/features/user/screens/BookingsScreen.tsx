@@ -1,5 +1,5 @@
 import { useFocusEffect } from '@react-navigation/native'
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 
 import {
   View,
@@ -10,13 +10,15 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  Alert,
 } from 'react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useDispatch } from 'react-redux'
 import { getUserBookings } from '../../../api/bookings'
 import { Booking } from '../../../types/booking.types'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { logout } from '../../../redux/slices/authSlice'
 
-export default function BookingsScreen({ navigation }: any) {
+export default function BookingsScreen() {
+  const dispatch = useDispatch()
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -30,7 +32,6 @@ export default function BookingsScreen({ navigation }: any) {
 
   const fetchBookings = async () => {
     try {
-      // Check if token exists
       const token = await AsyncStorage.getItem('authToken')
       if (!token) {
         console.log('[BookingsScreen] No auth token found')
@@ -43,14 +44,11 @@ export default function BookingsScreen({ navigation }: any) {
       setBookings(res.data.data || [])
     } catch (error: any) {
       console.error('[BookingsScreen] Error fetching bookings:', error.response?.status)
-      
+
       if (error.response?.status === 401) {
-        console.log('[BookingsScreen] Token expired, clearing...')
-        await AsyncStorage.removeItem('authToken')
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Login' }],
-        })
+        console.log('[BookingsScreen] Token expired, logging out...')
+        await AsyncStorage.multiRemove(['authToken', 'authUser'])
+        dispatch(logout())
       }
     } finally {
       setLoading(false)
