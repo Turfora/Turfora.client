@@ -1,4 +1,6 @@
+import { useFocusEffect } from '@react-navigation/native'
 import React, { useState, useEffect } from 'react'
+
 import {
   View,
   Text,
@@ -8,25 +10,48 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from 'react-native'
-import { getUserBookings } from '../../api/bookings'
-import { Booking } from '../../types/booking.types'
+import { getUserBookings } from '../../../api/bookings'
+import { Booking } from '../../../types/booking.types'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
-export default function BookingsScreen() {
+export default function BookingsScreen({ navigation }: any) {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
-  useEffect(() => {
-    fetchBookings()
-  }, [])
+  // Re-fetch when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchBookings()
+    }, [])
+  )
 
   const fetchBookings = async () => {
     try {
+      // Check if token exists
+      const token = await AsyncStorage.getItem('authToken')
+      if (!token) {
+        console.log('[BookingsScreen] No auth token found')
+        setLoading(false)
+        return
+      }
+
+      console.log('[BookingsScreen] Fetching bookings...')
       const res = await getUserBookings()
       setBookings(res.data.data || [])
-    } catch (error) {
-      console.error('Error fetching bookings:', error)
+    } catch (error: any) {
+      console.error('[BookingsScreen] Error fetching bookings:', error.response?.status)
+      
+      if (error.response?.status === 401) {
+        console.log('[BookingsScreen] Token expired, clearing...')
+        await AsyncStorage.removeItem('authToken')
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Login' }],
+        })
+      }
     } finally {
       setLoading(false)
     }
