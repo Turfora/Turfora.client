@@ -45,7 +45,15 @@ export default function HomeScreen({ navigation }: any) {
   }
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <View style={styles.wrapper}>
+      <View style={styles.logoContainer}>
+        <Image
+          source={require("../../../../assets/images/icon.png")}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+      </View>
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
       {/* Hero Banner */}
       <View style={styles.bannerContainer}>
         <Image
@@ -153,23 +161,49 @@ export default function HomeScreen({ navigation }: any) {
         </TouchableOpacity>
       </View>
     </ScrollView>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
   container: {
     flex: 1,
+    backgroundColor: 'transparent',
+    marginTop: 110,
+  },
+  contentContainer: {
     backgroundColor: '#f5f5f5',
+    paddingBottom: 80,
   },
   centerContainer: {
     paddingVertical: 40,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  logoContainer: {
+    position: 'absolute',
+    top: 5,
+    left: 0,
+    right: 0,
+    height: 80,
+    marginTop: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+    backgroundColor: 'transparent',
+  },
+  logo: {
+    width: 150,
+    height: 150,
+    borderRadius: 10
+  },
   bannerContainer: {
     height: 200,
     marginHorizontal: 16,
-    marginTop: 16,
     borderRadius: 16,
     overflow: 'hidden',
     position: 'relative',

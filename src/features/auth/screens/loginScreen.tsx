@@ -5,7 +5,11 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator
+  ActivityIndicator,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import AsyncStorage from "@react-native-async-storage/async-storage"
@@ -38,34 +42,90 @@ export default function LoginScreen({ navigation }: any) {
 
     try {
       setLoading(true)
+      console.log('[LoginScreen] Starting login with email:', email, 'role:', role)
+      
       const res = await loginUser({ email: email.trim(), password, role })
-      const token: string = res.data?.token ?? ""
-      const userData: User = res.data?.user ?? { id: '', email: email.trim(), role }
+      console.log('[LoginScreen] Login response received:', res.data)
 
+      // FIX: Token is nested under res.data.data.token, not res.data.token
+      const token: string = res.data?.data?.token ?? ""
+      const userData: User = res.data?.data?.user ?? { id: '', email: email.trim(), role }
+
+      console.log('[LoginScreen] Token extracted:', token ? `✓ Present (${token.substring(0, 20)}...)` : '✗ Missing')
+      console.log('[LoginScreen] User extracted:', userData)
+
+      if (!token) {
+        console.error('[LoginScreen] ERROR: No token in response!')
+        setError("Login failed: No authentication token received")
+        return
+      }
+
+      console.log('[LoginScreen] Saving token to AsyncStorage...')
       await AsyncStorage.setItem("authToken", token)
+      console.log('[LoginScreen] ✓ Token saved to AsyncStorage')
+
+      console.log('[LoginScreen] Saving user to AsyncStorage...')
       await AsyncStorage.setItem("authUser", JSON.stringify(userData))
+      console.log('[LoginScreen] ✓ User saved to AsyncStorage')
+
+      // Verify token was actually saved
+      const verifyToken = await AsyncStorage.getItem("authToken")
+      console.log('[LoginScreen] Verification: Token in storage:', verifyToken ? '✓ Yes' : '✗ No')
+
+      console.log('[LoginScreen] Dispatching credentials to Redux...')
       dispatch(setCredentials({ user: userData, token }))
+      console.log('[LoginScreen] ✓ Redux updated')
 
       if (rememberMe) {
         await saveData(REMEMBER_ME_KEY, { email: email.trim() })
+        console.log('[LoginScreen] ✓ Remember me saved')
       } else {
         await saveData(REMEMBER_ME_KEY, null)
       }
-    } catch {
-      setError("Invalid credentials")
+
+      console.log('[LoginScreen] ✓✓✓ Login successful! Navigating...')
+      navigation.replace("UserHome")
+      
+    } catch (err: any) {
+      console.error('[LoginScreen] ✗ LOGIN ERROR:', err)
+      console.error('[LoginScreen] Error message:', err.message)
+      console.error('[LoginScreen] Error response:', err.response?.data)
+      console.error('[LoginScreen] Error status:', err.response?.status)
+      
+      const errorMsg = err.response?.data?.message || err.message || "Invalid credentials"
+      setError(errorMsg)
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+          style={styles.flex}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+   <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
       {/* Header */}
-      <View style={styles.logoContainer}>
+       <View style={styles.logoContainer}>
+          <Image
+                    source={require("../../../../assets/images/icon.png")}
+                    style={styles.logo}
+                    resizeMode="contain"
+                  />
+                   <Text style={styles.tagline}>Book your perfect turf</Text>
+                  </View>
+                 
+      <View style={styles.card}>
+     
+                  
         <Text style={styles.title}>Welcome Back 👋</Text>
         <Text style={styles.subtitle}>Login to continue</Text>
-        <Text style={styles.tagline}>Book your perfect turf</Text>
-      </View>
+        
+      
 
       {/* Role Selector */}
       <RoleSelector selectedRole={role} onSelectRole={setRole} />
@@ -79,6 +139,7 @@ export default function LoginScreen({ navigation }: any) {
         value={email}
         onChangeText={setEmail}
         placeholderTextColor="#aaa"
+        editable={!loading}
       />
 
       {/* Password */}
@@ -90,11 +151,13 @@ export default function LoginScreen({ navigation }: any) {
           value={password}
           onChangeText={setPassword}
           placeholderTextColor="#aaa"
+          editable={!loading}
         />
 
         <TouchableOpacity
           onPress={() => setShowPassword(!showPassword)}
           accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+          disabled={loading}
         >
           <Ionicons
             name={showPassword ? "eye-off" : "eye"}
@@ -124,6 +187,7 @@ export default function LoginScreen({ navigation }: any) {
       <TouchableOpacity
         style={styles.rememberMeContainer}
         onPress={() => setRememberMe(!rememberMe)}
+        disabled={loading}
       >
         <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
           {rememberMe && <Ionicons name="checkmark" size={14} color="#fff" />}
@@ -135,28 +199,51 @@ export default function LoginScreen({ navigation }: any) {
       <TouchableOpacity
         onPress={() => navigation.navigate("Signup")}
         style={styles.footerContainer}
+        disabled={loading}
       >
         <Text style={styles.footer}>
           Don't have an account? <Text style={styles.link}>Sign Up</Text>
         </Text>
       </TouchableOpacity>
-    </View>
+      </View>
+    
+    </ScrollView>
+    </KeyboardAvoidingView>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
+   flex: {
     flex: 1,
+    backgroundColor: "#ffffff"
+  },
+ container: {
+    flexGrow: 1,
     paddingHorizontal: 24,
     paddingTop: 60,
-    paddingBottom: 40,
-    backgroundColor: "#fff",
-    justifyContent: "center"
+    paddingBottom: 40
   },
   logoContainer: {
     alignItems: "center",
-    marginBottom: 30
+    marginBottom: 25
   },
+  logo: {
+  width: 150,
+  height: 150,
+  borderRadius: 20,
+  marginBottom: 16
+},
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4
+  }
+,
   title: {
     fontSize: 28,
     fontWeight: "bold",
@@ -257,4 +344,4 @@ const styles = StyleSheet.create({
     color: "#2E86DE",
     fontWeight: "bold"
   }
-})
+})  

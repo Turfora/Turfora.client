@@ -22,6 +22,7 @@ export default function BookingsScreen() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // Re-fetch when screen comes into focus
   useFocusEffect(
@@ -32,25 +33,35 @@ export default function BookingsScreen() {
 
   const fetchBookings = async () => {
     try {
+      setError(null)
       const token = await AsyncStorage.getItem('authToken')
+      
       if (!token) {
         console.log('[BookingsScreen] No auth token found')
+        setError('No auth token found. Please login again.')
         setLoading(false)
+        dispatch(logout())
         return
       }
 
-      console.log('[BookingsScreen] Fetching bookings...')
+      console.log('[BookingsScreen] Fetching bookings with token...')
       const res = await getUserBookings()
       setBookings(res.data.data || [])
+      setLoading(false)
     } catch (error: any) {
-      console.error('[BookingsScreen] Error fetching bookings:', error.response?.status)
+      console.error('[BookingsScreen] Error fetching bookings:', error)
 
+      // Handle 401 Unauthorized
       if (error.response?.status === 401) {
-        console.log('[BookingsScreen] Token expired, logging out...')
+        console.log('[BookingsScreen] Token expired or invalid, logging out...')
+        setError('Session expired. Please login again.')
         await AsyncStorage.multiRemove(['authToken', 'authUser'])
         dispatch(logout())
+      } else {
+        const errorMsg = error.response?.data?.message || error.message || 'Failed to fetch bookings'
+        setError(errorMsg)
       }
-    } finally {
+      
       setLoading(false)
     }
   }
@@ -65,6 +76,19 @@ export default function BookingsScreen() {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color="#4CAF50" />
+        <Text style={styles.loadingText}>Loading your bookings...</Text>
+      </View>
+    )
+  }
+
+  if (error) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorIcon}>⚠️</Text>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={fetchBookings}>
+          <Text style={styles.retryButtonText}>Try Again</Text>
+        </TouchableOpacity>
       </View>
     )
   }
@@ -75,6 +99,9 @@ export default function BookingsScreen() {
         <Text style={styles.emptyIcon}>📅</Text>
         <Text style={styles.emptyText}>No bookings yet</Text>
         <Text style={styles.emptySubtext}>Start booking your favorite turfs!</Text>
+        <TouchableOpacity style={styles.refreshButton} onPress={fetchBookings}>
+          <Text style={styles.refreshButtonText}>Refresh</Text>
+        </TouchableOpacity>
       </View>
     )
   }
@@ -97,7 +124,10 @@ export default function BookingsScreen() {
                   styles.statusBadge,
                   {
                     backgroundColor:
-                      item.status === 'confirmed' ? '#4CAF50' : '#FFC107',
+                      item.status === 'confirmed' ? '#4CAF50' : 
+                      item.status === 'pending' ? '#FFC107' :
+                      item.status === 'cancelled' ? '#f44336' :
+                      '#999',
                   },
                 ]}
               >
@@ -120,7 +150,7 @@ export default function BookingsScreen() {
 
               <View style={styles.detailRow}>
                 <Text style={styles.label}>Total Price</Text>
-                <Text style={styles.price}>${item.total_price}</Text>
+                <Text style={styles.price}>₹{item.total_price}</Text>
               </View>
             </View>
 
@@ -144,6 +174,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 24,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#666',
   },
   emptyContainer: {
     flex: 1,
@@ -164,6 +200,40 @@ const styles = StyleSheet.create({
   emptySubtext: {
     fontSize: 14,
     color: '#999',
+    marginBottom: 24,
+  },
+  refreshButton: {
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 6,
+  },
+  refreshButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  errorIcon: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  errorText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#f44336',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  retryButton: {
+    backgroundColor: '#f44336',
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 6,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 13,
   },
   bookingCard: {
     backgroundColor: 'white',
