@@ -296,7 +296,7 @@ export default function SignupScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
-    backgroundColor: "#EAF4FF"
+    backgroundColor: "#ffffff"
   },
   container: {
     flexGrow: 1,
