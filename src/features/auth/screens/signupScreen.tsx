@@ -9,7 +9,8 @@ import {
   Image,
   ScrollView,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  Alert
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import AsyncStorage from "@react-native-async-storage/async-storage"
@@ -55,20 +56,68 @@ export default function SignupScreen({ navigation }: any) {
 
     try {
       setLoading(true)
+      
+      console.log('[SignupScreen] 📤 Sending signup request...')
+      
       const res = await registerUser({
         fullName: fullName.trim(),
         email: email.trim(),
         password,
         role
       })
-      const token: string = res.data?.token ?? ""
-      const userData: User = res.data?.user ?? { id: '', email: email.trim(), role }
+      
+      console.log('[SignupScreen] 📥 Response received:', res.data)
 
+      // Extract token and user - Response format: { data: { token, user }, success: true }
+      const responseData = res.data?.data || res.data
+      const token = responseData?.token
+      const userData = responseData?.user
+
+      console.log('[SignupScreen] 🔑 Token:', token ? '✓ Present' : '✗ Missing')
+      console.log('[SignupScreen] 👤 User data:', userData)
+
+      if (!token) {
+        throw new Error('No token received from server')
+      }
+
+      if (!userData) {
+        throw new Error('No user data received from server')
+      }
+
+      // Prepare user object
+      const user: User = {
+        id: userData.id,
+        email: userData.email,
+        fullname: userData.fullname || fullName,
+        phone: userData.phone || null,
+        role
+      }
+
+      console.log('[SignupScreen] 💾 Saving credentials...')
+      
       await AsyncStorage.setItem("authToken", token)
-      await AsyncStorage.setItem("authUser", JSON.stringify(userData))
-      dispatch(setCredentials({ user: userData, token }))
-    } catch {
-      setError("Registration failed. Please try again.")
+      await AsyncStorage.setItem("authUser", JSON.stringify(user))
+      
+      console.log('[SignupScreen] 🔴 Updating Redux...')
+      dispatch(setCredentials({ user, token }))
+
+      console.log('[SignupScreen] ✓✓✓ Signup successful!')
+      
+      // Navigation will happen automatically when Redux state updates
+      // The MainNavigator will detect user is set and show UserNavigator
+      
+    } catch (err: any) {
+      console.error('[SignupScreen] ❌ Error:', err)
+      console.error('[SignupScreen] ❌ Response status:', err.response?.status)
+      console.error('[SignupScreen] ❌ Response data:', err.response?.data)
+      console.error('[SignupScreen] ❌ Message:', err.message)
+      
+      const errorMessage = err.response?.data?.message || 
+                          err.message || 
+                          'Registration failed. Please try again.'
+      
+      setError(errorMessage)
+      Alert.alert('Signup Error', errorMessage)
     } finally {
       setLoading(false)
     }
@@ -114,6 +163,7 @@ export default function SignupScreen({ navigation }: any) {
               onChangeText={setFullName}
               placeholderTextColor="#aaa"
               returnKeyType="next"
+              editable={!loading}
             />
           </View>
 
@@ -129,6 +179,7 @@ export default function SignupScreen({ navigation }: any) {
               onChangeText={setEmail}
               placeholderTextColor="#aaa"
               returnKeyType="next"
+              editable={!loading}
             />
           </View>
 
@@ -143,9 +194,11 @@ export default function SignupScreen({ navigation }: any) {
               onChangeText={setPassword}
               placeholderTextColor="#aaa"
               returnKeyType="next"
+              editable={!loading}
             />
             <TouchableOpacity
               onPress={() => setShowPassword(!showPassword)}
+              disabled={loading}
               accessibilityLabel={showPassword ? "Hide password" : "Show password"}
             >
               <Ionicons
@@ -168,9 +221,11 @@ export default function SignupScreen({ navigation }: any) {
               placeholderTextColor="#aaa"
               returnKeyType="done"
               onSubmitEditing={handleSignup}
+              editable={!loading}
             />
             <TouchableOpacity
               onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+              disabled={loading}
               accessibilityLabel={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
             >
               <Ionicons
@@ -185,6 +240,7 @@ export default function SignupScreen({ navigation }: any) {
           <TouchableOpacity
             style={styles.checkboxRow}
             onPress={() => setAcceptedTerms(!acceptedTerms)}
+            disabled={loading}
             accessibilityRole="checkbox"
             accessibilityState={{ checked: acceptedTerms }}
           >
@@ -226,6 +282,7 @@ export default function SignupScreen({ navigation }: any) {
           <TouchableOpacity
             style={styles.footerRow}
             onPress={() => navigation.navigate("Login")}
+            disabled={loading}
           >
             <Text style={styles.footerText}>Already have an account? </Text>
             <Text style={styles.link}>Login</Text>
