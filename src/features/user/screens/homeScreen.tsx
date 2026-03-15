@@ -18,7 +18,7 @@ const CATEGORIES = [
   { name: 'Football', icon: '⚽' },
   { name: 'Volleyball', icon: '🏐' },
   { name: 'Badminton', icon: '🏸' },
-  { name: 'Other', icon: '⊞' },
+ 
 ]
 
 export default function HomeScreen({ navigation }: any) {
@@ -46,13 +46,22 @@ export default function HomeScreen({ navigation }: any) {
 
   return (
     <View style={styles.wrapper}>
-      <View style={styles.logoContainer}>
+      <View style={styles.navigationBar}>
+        <TouchableOpacity onPress={() => console.log('Search')}>
+          <Text style={styles.searchIcon}>⌕</Text>
+        </TouchableOpacity>
+        
         <Image
           source={require("../../../../assets/images/icon.png")}
           style={styles.logo}
           resizeMode="contain"
         />
+        
+        <TouchableOpacity onPress={() => navigation.openDrawer()}>
+          <Text style={styles.menuIcon}>☰</Text>
+        </TouchableOpacity>
       </View>
+
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
       {/* Hero Banner */}
       <View style={styles.bannerContainer}>
@@ -79,6 +88,7 @@ export default function HomeScreen({ navigation }: any) {
           showsHorizontalScrollIndicator={false}
           data={CATEGORIES}
           keyExtractor={(item) => item.name}
+          contentContainerStyle={styles.flatListContent}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={[
@@ -143,7 +153,7 @@ export default function HomeScreen({ navigation }: any) {
                   <Text style={styles.rating}>{turf.rating || 4.6}</Text>
                 </View>
                 <Text style={styles.turfName}>{turf.name}</Text>
-                <Text style={styles.price}>${turf.price_per_hour}/hr</Text>
+                <Text style={styles.price}>₹{turf.price_per_hour}/hr</Text>
               </View>
             </TouchableOpacity>
           ))}
@@ -170,10 +180,36 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'transparent',
   },
+  navigationBar: {
+    position: 'absolute',
+    top: 5,
+    left: 0,
+    right: 0,
+    height: 60,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 25,
+    zIndex: 10,
+  },
+  searchIcon: {
+    fontSize: 44,
+    color: '#000',
+  },
+  menuIcon: {
+    fontSize: 28,
+    color: '#000',
+  },
+  logo: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+  },
   container: {
     flex: 1,
     backgroundColor: 'transparent',
-    marginTop: 110,
+    marginTop: 80,
   },
   contentContainer: {
     backgroundColor: '#f5f5f5',
@@ -183,23 +219,6 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  logoContainer: {
-    position: 'absolute',
-    top: 5,
-    left: 0,
-    right: 0,
-    height: 80,
-    marginTop: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10,
-    backgroundColor: 'transparent',
-  },
-  logo: {
-    width: 150,
-    height: 150,
-    borderRadius: 10
   },
   bannerContainer: {
     height: 200,
@@ -249,9 +268,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: 16,
   },
+  flatListContent: {
+    alignItems: 'center',
+  },
   categoryButton: {
     alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 20,
+    width: 70,
   },
   categoryButtonActive: {
     opacity: 1,
@@ -259,10 +283,12 @@ const styles = StyleSheet.create({
   categoryIcon: {
     fontSize: 28,
     marginBottom: 4,
+    textAlign: 'center',
   },
   categoryName: {
     fontSize: 12,
     color: '#999',
+    textAlign: 'center',
   },
   categoryNameActive: {
     color: '#000',
