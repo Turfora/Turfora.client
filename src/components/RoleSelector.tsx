@@ -10,7 +10,7 @@ import {
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 
-import { Role, RoleSelectorProps } from "../../../types/role.types"
+import { Role, RoleSelectorProps } from "../types/role.types"
 export type { Role }
 
 const ROLE_CONFIG: Record<Role, { label: string; icon: string; description: string; color: string }> = {
@@ -37,12 +37,12 @@ const ROLE_CONFIG: Record<Role, { label: string; icon: string; description: stri
 export default function RoleSelector<T extends Role>({
   selectedRole,
   onSelectRole,
-  allowedRoles = ["USER", "OWNER", "ADMIN"] as const,
+  allowedRoles = (["USER", "OWNER", "ADMIN"] as Role[]) as unknown as readonly T[],
   disabled = false,
 }: RoleSelectorProps<T>) {
   const [isOpen, setIsOpen] = useState(false)
 
-  const availableRoles = allowedRoles.filter((role) => allowedRoles.includes(role))
+  const availableRoles = allowedRoles.filter((role: T) => allowedRoles.includes(role))
   const selectedRoleConfig = ROLE_CONFIG[selectedRole]
 
   const handleSelectRole = (role: T) => {
