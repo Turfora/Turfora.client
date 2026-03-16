@@ -28,7 +28,7 @@ export default function SignupScreen({ navigation }: any) {
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [role, setRole] = useState<Role>("USER")
+  const [role, setRole] = useState<'USER' | 'OWNER'>("USER")
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
