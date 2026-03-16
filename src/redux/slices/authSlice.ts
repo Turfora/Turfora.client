@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit"
+import AsyncStorage from "@react-native-async-storage/async-storage"
 import { User } from "../../types/user.types"
 
 interface AuthState {
@@ -37,4 +38,16 @@ const authSlice = createSlice({
 })
 
 export const { setUser, setCredentials, logout, setLoading } = authSlice.actions
+
+export const logoutAsync = () => async (dispatch: (action: any) => void) => {
+  try {
+    await AsyncStorage.removeItem('authToken')
+    await AsyncStorage.removeItem('authUser')
+    dispatch(logout())
+  } catch (error) {
+    console.error('[logoutAsync] Error clearing AsyncStorage:', error)
+    dispatch(logout())
+  }
+}
+
 export default authSlice.reducer

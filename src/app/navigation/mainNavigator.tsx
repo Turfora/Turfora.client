@@ -214,9 +214,15 @@ export default function MainNavigator() {
         console.log('[MainNavigator] User found:', !!userStr)
 
         if (token && userStr) {
-          const savedUser = JSON.parse(userStr)
-          console.log('[MainNavigator] User role:', savedUser.role)
-          dispatch(setCredentials({ user: savedUser, token }))
+          try {
+            const savedUser = JSON.parse(userStr)
+            console.log('[MainNavigator] User role:', savedUser.role)
+            dispatch(setCredentials({ user: savedUser, token }))
+          } catch (parseError) {
+            console.error('[MainNavigator] Error parsing saved user data, clearing storage:', parseError)
+            await AsyncStorage.removeItem('authToken')
+            await AsyncStorage.removeItem('authUser')
+          }
         }
       } catch (error) {
         console.error('[MainNavigator] Error loading auth state:', error)
