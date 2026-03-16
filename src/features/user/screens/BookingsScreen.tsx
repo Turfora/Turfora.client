@@ -13,12 +13,13 @@ import {
 } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useDispatch } from 'react-redux'
+import { AppDispatch } from '../../../redux/store'
 import { getUserBookings } from '../../../api/bookings'
 import { Booking } from '../../../types/booking.types'
-import { logout } from '../../../redux/slices/authSlice'
+import { logoutAsync } from '../../../redux/slices/authSlice'
 
 export default function BookingsScreen() {
-  const dispatch = useDispatch()
+  const dispatch = useDispatch<AppDispatch>()
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -40,7 +41,7 @@ export default function BookingsScreen() {
         console.log('[BookingsScreen] No auth token found')
         setError('No auth token found. Please login again.')
         setLoading(false)
-        dispatch(logout())
+        await dispatch(logoutAsync())
         return
       }
 
@@ -55,8 +56,7 @@ export default function BookingsScreen() {
       if (error.response?.status === 401) {
         console.log('[BookingsScreen] Token expired or invalid, logging out...')
         setError('Session expired. Please login again.')
-        await AsyncStorage.multiRemove(['authToken', 'authUser'])
-        dispatch(logout())
+        await dispatch(logoutAsync())
       } else {
         const errorMsg = error.response?.data?.message || error.message || 'Failed to fetch bookings'
         setError(errorMsg)

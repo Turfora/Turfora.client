@@ -8,13 +8,12 @@ import {
   ScrollView,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useSelector, useDispatch } from 'react-redux'
-import { RootState } from '../../../redux/store'
-import { logout } from '../../../redux/slices/authSlice'
+import { RootState, AppDispatch } from '../../../redux/store'
+import { logoutAsync } from '../../../redux/slices/authSlice'
 
 export default function ProfileScreen() {
-  const dispatch = useDispatch()
+  const dispatch = useDispatch<AppDispatch>()
   const user = useSelector((state: RootState) => state.auth.user)
 
   const handleLogout = () => {
@@ -24,8 +23,7 @@ export default function ProfileScreen() {
         text: 'Logout',
         style: 'destructive',
         onPress: async () => {
-          await AsyncStorage.multiRemove(['authToken', 'authUser'])
-          dispatch(logout())
+          await dispatch(logoutAsync())
         },
       },
     ])
