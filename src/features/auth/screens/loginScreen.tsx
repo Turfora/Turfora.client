@@ -49,7 +49,7 @@ export default function LoginScreen({ navigation }: any) {
 
       // FIX: Token is nested under res.data.data.token, not res.data.token
       const token: string = res.data?.data?.token ?? ""
-      const userData: User = res.data?.data?.user ?? { id: '', email: email.trim(), role }
+      const userData: User = res.data?.data?.user ?? { id: '', email: email.trim(), role, fullname: '', phone: null }
 
       console.log('[LoginScreen] Token extracted:', token ? `✓ Present (${token.substring(0, 20)}...)` : '✗ Missing')
       console.log('[LoginScreen] User extracted:', userData)
