@@ -5,4 +5,8 @@ export interface Turf {
   is_featured: boolean
   rating: number
   price_per_hour: number
+  location?: string
+  category?: string
+  description?: string
+  amenities?: string[]
 }
