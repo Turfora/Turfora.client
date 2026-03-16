@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "turfora-mobile",
-    "slug": "turfora-mobile",
+    "name": "Turfora",
+    "slug": "turfora",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/logo2.jpeg",
     "scheme": "turforamobile",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
