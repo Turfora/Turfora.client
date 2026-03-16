@@ -13,10 +13,9 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useSelector, useDispatch } from 'react-redux'
-import { RootState } from '../../../redux/store'
-import { logout } from '../../../redux/slices/authSlice'
+import { RootState, AppDispatch } from '../../../redux/store'
+import { logoutAsync } from '../../../redux/slices/authSlice'
 import { getOwnerRevenue, getTodayBookings, getTurfsByOwner } from '../../../api/owner.api'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const { width } = Dimensions.get('window')
 
@@ -47,7 +46,7 @@ interface Turf {
 }
 
 export default function OwnerDashboard({ navigation }: any) {
-  const dispatch = useDispatch()
+  const dispatch = useDispatch<AppDispatch>()
   const user = useSelector((state: RootState) => state.auth.user)
   const [activeTab, setActiveTab] = useState<'dashboard' | 'turfs' | 'settings'>('dashboard')
   const [revenueStats, setRevenueStats] = useState<RevenueStats>({
@@ -117,20 +116,8 @@ export default function OwnerDashboard({ navigation }: any) {
           onPress: async () => {
             try {
               console.log('[OwnerDashboard] Logging out...')
-
-              // Clear Redux state
-              dispatch(logout())  // CHANGED THIS LINE
-
-              // Clear AsyncStorage
-              await AsyncStorage.multiRemove(['authToken', 'authUser'])
-
+              await dispatch(logoutAsync())
               console.log('[OwnerDashboard] Logout successful')
-
-              // Navigate to login screen
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'Login' }],
-              })
             } catch (error) {
               console.error('[OwnerDashboard] Logout error:', error)
               Alert.alert('Error', 'Failed to logout')
