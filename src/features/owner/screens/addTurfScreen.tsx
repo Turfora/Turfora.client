@@ -93,6 +93,9 @@ export default function AddTurfScreen({ navigation }: any) {
     return null
   }
 
+  const toHHMMSS = (time: string) =>
+    time.match(/^\d{2}:\d{2}$/) ? `${time}:00` : time
+
   const handleSubmit = async () => {
     const validationError = validateForm()
     if (validationError) {
@@ -105,6 +108,8 @@ export default function AddTurfScreen({ navigation }: any) {
       const payload = {
         ...formData,
         pricePerHour: parseFloat(formData.pricePerHour),
+        openingTime: toHHMMSS(formData.openingTime),
+        closingTime: toHHMMSS(formData.closingTime),
         images,
       }
 

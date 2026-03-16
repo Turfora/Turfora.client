@@ -37,18 +37,22 @@ export default function SlotScreen({ route, navigation }: any) {
     }
   }
 
+  // Normalize HH:MM to HH:MM:SS
+  const toHHMMSS = (time: string) =>
+    time.match(/^\d{2}:\d{2}$/) ? `${time}:00` : time
+
   const handleBooking = async () => {
     try {
       setBooking(true)
-      const endTime = new Date(`2024-01-01 ${selectedTime}`)
-      endTime.setHours(endTime.getHours() + 1)
+      const endTimeDate = new Date(`2024-01-01T${selectedTime}:00`)
+      endTimeDate.setHours(endTimeDate.getHours() + 1)
+      const endTimeStr = endTimeDate.toTimeString().split(' ')[0] // HH:MM:SS
 
       await createBooking({
         turfId: turf.id,
         bookingDate: selectedDate,
-        startTime: selectedTime,
-        endTime: endTime.toTimeString().split(' ')[0],
-        totalPrice: turf.price_per_hour,
+        startTime: toHHMMSS(selectedTime),
+        endTime: endTimeStr,
       })
 
       Alert.alert('Success', 'Booking confirmed!', [
@@ -107,7 +111,7 @@ export default function SlotScreen({ route, navigation }: any) {
         </View>
 
         <View style={styles.priceSection}>
-          <Text style={styles.price}>${turf.price_per_hour}</Text>
+          <Text style={styles.price}>₹{turf.price_per_hour}</Text>
           <Text style={styles.perHour}>/hour</Text>
         </View>
 
@@ -169,7 +173,7 @@ export default function SlotScreen({ route, navigation }: any) {
             {booking ? (
               <ActivityIndicator size="small" color="white" />
             ) : (
-              <Text style={styles.bookButtonText}>Book Now - ${turf.price_per_hour}</Text>
+              <Text style={styles.bookButtonText}>Book Now — ₹{turf.price_per_hour}/hr</Text>
             )}
           </TouchableOpacity>
         </View>

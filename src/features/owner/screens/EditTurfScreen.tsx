@@ -71,10 +71,10 @@ export default function EditTurfScreen({ navigation, route }: any) {
         description: turf.description || '',
         location: turf.location || '',
         category: turf.category || 'Cricket',
-        pricePerHour: turf.pricePerHour?.toString() || '',
-        openingTime: turf.openingTime || '06:00',
-        closingTime: turf.closingTime || '22:00',
-        phoneNumber: turf.phoneNumber || '',
+        pricePerHour: (turf.price_per_hour ?? turf.pricePerHour)?.toString() || '',
+        openingTime: turf.opening_time || turf.openingTime || '06:00',
+        closingTime: turf.closing_time || turf.closingTime || '22:00',
+        phoneNumber: turf.phone_number || turf.phoneNumber || '',
         amenities: turf.amenities || [],
       })
 
@@ -155,6 +155,9 @@ export default function EditTurfScreen({ navigation, route }: any) {
     return null
   }
 
+  const toHHMMSS = (time: string) =>
+    time.match(/^\d{2}:\d{2}$/) ? `${time}:00` : time
+
   const handleSubmit = async () => {
     const validationError = validateForm()
     if (validationError) {
@@ -167,6 +170,8 @@ export default function EditTurfScreen({ navigation, route }: any) {
       const payload = {
         ...formData,
         pricePerHour: parseFloat(formData.pricePerHour),
+        openingTime: toHHMMSS(formData.openingTime),
+        closingTime: toHHMMSS(formData.closingTime),
         images: [...existingImages, ...images],
       }
 
