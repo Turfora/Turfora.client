@@ -22,6 +22,11 @@ export const getTurfsByOwner = () => {
   return client.get('/turfs/owner/my-turfs')
 }
 
+export const getTurfsByOwnerId = (ownerId: string) => {
+  console.log('[Owner API] Fetching turfs for owner:', ownerId)
+  return client.get(`/turfs/owner/${ownerId}`)
+}
+
 export const getTurfById = (turfId: string) => {
   console.log('[Owner API] Fetching turf:', turfId)
   return client.get(`/turfs/${turfId}`)
@@ -53,6 +58,11 @@ export const getOwnerBookings = (limit?: number, offset?: number) => {
   return client.get('/bookings/owner/all', {
     params: { limit, offset },
   })
+}
+
+export const getBookingsByOwnerId = (ownerId: string) => {
+  console.log('[Owner API] Fetching bookings for owner:', ownerId)
+  return client.get(`/bookings/owner/${ownerId}`)
 }
 
 export const updateBookingStatus = (bookingId: string, status: string) => {

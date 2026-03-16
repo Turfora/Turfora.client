@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState, AppDispatch } from '../../../redux/store'
 import { logoutAsync } from '../../../redux/slices/authSlice'
-import { getOwnerRevenue, getTodayBookings, getTurfsByOwner } from '../../../api/owner.api'
+import { getTurfsByOwnerId, getBookingsByOwnerId } from '../../../api/owner.api'
 
 const { width } = Dimensions.get('window')
 
@@ -33,6 +33,7 @@ interface Booking {
   endTime: string
   amount: number
   status: string
+  bookingDate?: string
 }
 
 interface Turf {
@@ -58,32 +59,69 @@ export default function OwnerDashboard({ navigation }: any) {
   const [turfs, setTurfs] = useState<Turf[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchDashboardData()
   }, [])
 
   const fetchDashboardData = async () => {
+    if (!user?.id) {
+      setError('User not authenticated')
+      setLoading(false)
+      return
+    }
+
     try {
       setLoading(true)
-      const [revenueRes, bookingsRes, turfsRes] = await Promise.all([
-        getOwnerRevenue(),
-        getTodayBookings(),
-        getTurfsByOwner(),
+      setError(null)
+
+      const [turfsRes, bookingsRes] = await Promise.all([
+        getTurfsByOwnerId(user.id),
+        getBookingsByOwnerId(user.id),
       ])
 
-      setRevenueStats({
-        totalRevenue: revenueRes.data?.data?.totalRevenue || 0,
-        todayRevenue: revenueRes.data?.data?.todayRevenue || 0,
-        todayRevenuePercentage: revenueRes.data?.data?.todayRevenuePercentage || 0,
-      })
-      setBookings(bookingsRes.data?.data?.bookings || bookingsRes.data?.data || [])
-      // Backend returns { turfs: [...], count: N } or an array directly
       const turfsData = turfsRes.data?.data
-      setTurfs(Array.isArray(turfsData) ? turfsData : (turfsData?.turfs || []))
-    } catch (error) {
-      console.error('[OwnerDashboard] Error:', error)
-      Alert.alert('Error', 'Failed to load dashboard data')
+      const fetchedTurfs: Turf[] = Array.isArray(turfsData)
+        ? turfsData
+        : turfsData?.turfs || []
+      setTurfs(fetchedTurfs)
+
+      const bookingsData = bookingsRes.data?.data
+      const fetchedBookings: Booking[] = Array.isArray(bookingsData)
+        ? bookingsData
+        : bookingsData?.bookings || []
+      setBookings(fetchedBookings)
+
+      // Calculate revenue locally from completed bookings
+      const totalRevenue = fetchedBookings
+        .filter((b) => b.status === 'completed')
+        .reduce((sum, b) => sum + (b.amount || 0), 0)
+
+      const today = new Date().toISOString().slice(0, 10)
+      const todayRevenue = fetchedBookings
+        .filter(
+          (b) =>
+            b.status === 'completed' &&
+            b.bookingDate?.slice(0, 10) === today
+        )
+        .reduce((sum, b) => sum + (b.amount || 0), 0)
+
+      const todayRevenuePercentage =
+        totalRevenue > 0
+          ? Math.round((todayRevenue / totalRevenue) * 100)
+          : 0
+
+      setRevenueStats({
+        totalRevenue,
+        todayRevenue,
+        todayRevenuePercentage,
+      })
+    } catch (err: any) {
+      console.error('[OwnerDashboard] Error:', err)
+      const message =
+        err?.response?.data?.message || 'Failed to load dashboard data'
+      setError(message)
     } finally {
       setLoading(false)
     }
@@ -131,6 +169,23 @@ export default function OwnerDashboard({ navigation }: any) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color="#2E86DE" />
+      </View>
+    )
+  }
+
+  if (error) {
+    return (
+      <View style={styles.centerContainer}>
+        <Ionicons name="alert-circle-outline" size={64} color="#FF6B6B" />
+        <Text style={styles.errorTitle}>Failed to Load Dashboard</Text>
+        <Text style={styles.errorMessage}>{error}</Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={fetchDashboardData}
+        >
+          <Ionicons name="refresh" size={20} color="#fff" />
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
       </View>
     )
   }
@@ -481,6 +536,35 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#1A1A2E',
+    padding: 24,
+  },
+  errorTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FF6B6B',
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  errorMessage: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#2E86DE',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '700',
   },
   header: {
     backgroundColor: '#2E86DE',
