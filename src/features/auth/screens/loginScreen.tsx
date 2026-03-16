@@ -83,8 +83,7 @@ export default function LoginScreen({ navigation }: any) {
         await saveData(REMEMBER_ME_KEY, null)
       }
 
-      console.log('[LoginScreen] ✓✓✓ Login successful! Navigating...')
-      navigation.replace("UserHome")
+      console.log('[LoginScreen] ✓✓✓ Login successful! Role:', userData.role, '- Navigator will update via Redux')
       
     } catch (err: any) {
       console.error('[LoginScreen] ✗ LOGIN ERROR:', err)
