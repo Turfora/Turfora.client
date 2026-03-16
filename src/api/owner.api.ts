@@ -1,6 +1,24 @@
 import client from './client'
 
-// Revenue APIs
+// ============ Owner Dashboard APIs ============
+
+export const getOwnerTurfs = (ownerId: string) => {
+  console.log('[Owner API] Fetching turfs for owner (new):', ownerId)
+  return client.get(`/owner/turfs/${ownerId}`)
+}
+
+export const getOwnerBookings = (ownerId: string) => {
+  console.log('[Owner API] Fetching bookings for owner (new):', ownerId)
+  return client.get(`/owner/bookings/${ownerId}`)
+}
+
+export const getOwnerStats = (ownerId: string) => {
+  console.log('[Owner API] Fetching stats for owner:', ownerId)
+  return client.get(`/owner/stats/${ownerId}`)
+}
+
+// ============ Revenue APIs ============
+
 export const getOwnerRevenue = () => {
   console.log('[Owner API] Fetching revenue stats')
   return client.get('/revenue')
@@ -53,7 +71,7 @@ export const getTodayBookings = () => {
   return client.get('/bookings/owner/today')
 }
 
-export const getOwnerBookings = (limit?: number, offset?: number) => {
+export const getOwnerAllBookings = (limit?: number, offset?: number) => {
   console.log('[Owner API] Fetching owner bookings')
   return client.get('/bookings/owner/all', {
     params: { limit, offset },

@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState, AppDispatch } from '../../../redux/store'
 import { logoutAsync } from '../../../redux/slices/authSlice'
-import { getTurfsByOwnerId, getBookingsByOwnerId } from '../../../api/owner.api'
+import { getOwnerTurfs, getOwnerBookings } from '../../../api/owner.api'
 
 const { width } = Dimensions.get('window')
 
@@ -77,8 +77,8 @@ export default function OwnerDashboard({ navigation }: any) {
       setError(null)
 
       const [turfsRes, bookingsRes] = await Promise.all([
-        getTurfsByOwnerId(user.id),
-        getBookingsByOwnerId(user.id),
+        getOwnerTurfs(user.id),
+        getOwnerBookings(user.id),
       ])
 
       const turfsData = turfsRes.data?.data
