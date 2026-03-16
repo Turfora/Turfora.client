@@ -22,6 +22,8 @@ interface RegisterResponse {
 interface LoginPayload {
   email: string
   password: string
+  /** Optional role hint sent by the login screen's role selector */
+  role?: 'USER' | 'OWNER' | 'ADMIN'
 }
 
 export const registerUser = async (payload: RegisterPayload) => {
