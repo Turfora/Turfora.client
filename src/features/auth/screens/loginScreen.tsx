@@ -16,8 +16,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 import { useDispatch } from "react-redux"
 import { loginUser } from "../../../api/auth.api"
 import { setCredentials } from "../../../redux/slices/authSlice"
-import { saveData, getData } from "../../../lib/storage"
-import RoleSelector, { Role } from "../../../components/RoleSelector"
+import { saveData } from "../../../lib/storage"
 import { User } from "../../../types/user.types"
 
 const REMEMBER_ME_KEY = "turfora_remember_me"
@@ -28,7 +27,6 @@ export default function LoginScreen({ navigation }: any) {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const [role, setRole] = useState<Role>('USER')
   const [rememberMe, setRememberMe] = useState(false)
   const dispatch = useDispatch()
 
@@ -42,14 +40,14 @@ export default function LoginScreen({ navigation }: any) {
 
     try {
       setLoading(true)
-      console.log('[LoginScreen] Starting login with email:', email, 'role:', role)
+      console.log('[LoginScreen] Starting login with email:', email)
       
-      const res = await loginUser({ email: email.trim(), password, role })
+      // Only send email and password — role must come from the backend
+      const res = await loginUser({ email: email.trim(), password })
       console.log('[LoginScreen] Login response received:', res.data)
 
-      // FIX: Token is nested under res.data.data.token, not res.data.token
       const token: string = res.data?.data?.token ?? ""
-      const userData: User = res.data?.data?.user ?? { id: '', email: email.trim(), role }
+      const userData: User | undefined = res.data?.data?.user
 
       console.log('[LoginScreen] Token extracted:', token ? `✓ Present (${token.substring(0, 20)}...)` : '✗ Missing')
       console.log('[LoginScreen] User extracted:', userData)
@@ -57,6 +55,12 @@ export default function LoginScreen({ navigation }: any) {
       if (!token) {
         console.error('[LoginScreen] ERROR: No token in response!')
         setError("Login failed: No authentication token received")
+        return
+      }
+
+      if (!userData) {
+        console.error('[LoginScreen] ERROR: No user data in response!')
+        setError("Login failed: No user data received")
         return
       }
 
@@ -84,7 +88,6 @@ export default function LoginScreen({ navigation }: any) {
       }
 
       console.log('[LoginScreen] ✓✓✓ Login successful! Role:', userData.role, '- Navigator will update via Redux')
-      
     } catch (err: any) {
       console.error('[LoginScreen] ✗ LOGIN ERROR:', err)
       console.error('[LoginScreen] Error message:', err.message)
@@ -125,9 +128,6 @@ export default function LoginScreen({ navigation }: any) {
         <Text style={styles.subtitle}>Login to continue</Text>
         
       
-
-      {/* Role Selector */}
-      <RoleSelector selectedRole={role} onSelectRole={setRole} />
 
       {/* Email */}
       <TextInput
