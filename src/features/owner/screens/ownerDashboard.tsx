@@ -39,9 +39,11 @@ interface Booking {
 interface Turf {
   id: string
   name: string
-  pricePerHour: number
+  pricePerHour?: number
+  price_per_hour?: number
   location: string
   imageUrl?: string
+  image_url?: string
 }
 
 export default function OwnerDashboard({ navigation }: any) {
@@ -76,8 +78,10 @@ export default function OwnerDashboard({ navigation }: any) {
         todayRevenue: revenueRes.data?.data?.todayRevenue || 0,
         todayRevenuePercentage: revenueRes.data?.data?.todayRevenuePercentage || 0,
       })
-      setBookings(bookingsRes.data?.data?.bookings || [])
-      setTurfs(turfsRes.data?.data || [])
+      setBookings(bookingsRes.data?.data?.bookings || bookingsRes.data?.data || [])
+      // Backend returns { turfs: [...], count: N } or an array directly
+      const turfsData = turfsRes.data?.data
+      setTurfs(Array.isArray(turfsData) ? turfsData : (turfsData?.turfs || []))
     } catch (error) {
       console.error('[OwnerDashboard] Error:', error)
       Alert.alert('Error', 'Failed to load dashboard data')
@@ -349,7 +353,7 @@ export default function OwnerDashboard({ navigation }: any) {
 
                     <View style={styles.turfCardContent}>
                       <Text style={styles.turfCardName}>{item.name}</Text>
-                      <Text style={styles.turfCardPrice}>₹{item.pricePerHour}/hr</Text>
+                      <Text style={styles.turfCardPrice}>₹{item.price_per_hour ?? item.pricePerHour}/hr</Text>
                       <Text style={styles.turfCardLocation}>📍 {item.location}</Text>
 
                       <View style={styles.turfCardActions}>

@@ -69,7 +69,7 @@ export default function AllTurfsScreen({ navigation }: any) {
               <Text style={styles.rating}>{item.rating || 4.6}</Text>
             </View>
             <Text style={styles.name}>{item.name}</Text>
-            <Text style={styles.price}>${item.price_per_hour}/hr</Text>
+            <Text style={styles.price}>₹{item.price_per_hour}/hr</Text>
           </View>
         </TouchableOpacity>
       )}
